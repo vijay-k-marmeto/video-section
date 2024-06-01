@@ -1,0 +1,510 @@
+<script src="{{ 'video-section.js' | asset_url }}" defer="defer"></script>
+
+{%- style -%}
+.section-{{ section.id }}-padding {
+    padding-top: {{ section.settings.padding_top | times: 0.75 | round: 0 }}px;
+    padding-bottom: {{ section.settings.padding_bottom | times: 0.75 | round: 0 }}px;
+}
+
+@media screen and (min-width: 750px) {
+    .section-{{ section.id }}-padding {
+        padding-top: {{ section.settings.padding_top }}px;
+        padding-bottom: {{ section.settings.padding_bottom }}px;
+    }
+}
+{%- endstyle -%}
+
+<div class="section-{{ section.id }}-padding color-{{ section.settings.color_scheme }}{% unless section.settings.full_width %} page-width{% endunless %}" >
+      <div class="relative">
+        {%- if section.settings.desktop_video == blank and section.settings.video_url != blank -%}
+          {%- liquid
+            assign video_id = section.settings.video_url | split: 'v=' | last
+            assign loop = ''
+            if section.settings.enable_video_looping
+              assign loop = '&loop=1&playlist=' | append: video_id
+            endif
+          -%}
+          <div class="aspect-[{{ section.settings.desktop_size }}]">
+            <iframe
+              width="100%"
+              height="100%"
+              src="https://www.youtube.com/embed/{{ video_id }}?enablejsapi=1&autoplay=1{{ loop }}"
+              class="js-youtube"
+              allow="autoplay; encrypted-media"
+              allowfullscreen
+              title="{{ section.settings.description | escape }}"
+            ></iframe>
+          </div>
+        {%- else -%}
+          <video-containers>
+            <div class="md:hidden">
+                {% if section.settings.mobile_video != blank or section.settings.desktop_video != blank %}
+                    {% if section.settings.mobile_video != blank %}
+                        <div class="aspect-[{{ section.settings.mobile_size }}]">
+                          <video
+                            muted
+                            {% if section.settings.autoplay %}autoplay{% endif  %}
+                            {% if section.settings.controls %}controls{% endif %}
+                            {% if section.settings.enable_video_looping %}loop{% endif %}
+                            class="lazy"
+                          >
+                            <source src data-src="{{ section.settings.mobile_video.sources.last.url }}" type="video/mp4">
+                          </video>
+                        </div>
+                    {% else %}
+                        <div class="aspect-[{{ section.settings.desktop_size }}]">
+                          <video
+                            muted
+                            {% if section.settings.autoplay %}autoplay{% endif  %}
+                            {% if section.settings.controls %}controls{% endif %}
+                            {% if section.settings.enable_video_looping %}loop{% endif %}
+                            class="lazy"
+                          >
+                            <source src data-src="{{ section.settings.desktop_video.sources.last.url }}" type="video/mp4">
+                          </video>
+                        </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+            <div class="hidden md:block">
+                <div class="aspect-[{{ section.settings.desktop_size }}]">
+                    <video
+                      muted
+                      {% if section.settings.autoplay %}autoplay{% endif  %}
+                      {% if section.settings.controls %}controls{% endif %}
+                      {% if section.settings.enable_video_looping %}loop{% endif %}
+                      class="lazy"
+                    >
+                      <source src data-src="{{ section.settings.desktop_video.sources.last.url }}" type="video/mp4">
+                    </video>
+                </div>
+            </div>
+          </video-containers>
+        {% endif %}
+        <div class="absolute top-0 left-0 w-full h-full flex flex-col {{ section.settings.content_position }}">
+          <div class="flex flex-col gap-y-5 items-{{ section.settings.text_position }}">
+            {%- for block in section.blocks -%}
+                {% case block.type %}
+                  {%- when 'heading' -%}
+                    <h2
+                      class="{{ block.settings.heading_size }}"
+                      {{ block.shopify_attributes }}
+                    >
+                      {{ block.settings.heading }}
+                    </h2>
+                  {%- when 'caption' -%}
+                    <p
+                      class="{{ block.settings.caption_size }}"
+                      {{ block.shopify_attributes }}
+                    >
+                      {{ block.settings.caption | escape }}
+                    </p>
+                  {%- when 'text' -%}
+                    <div class="max-w-2xl text-{{ section.settings.text_position }}" {{ block.shopify_attributes }}>
+                      {{ block.settings.text }}
+                    </div>
+                  {%- when 'button' -%}
+                    <div class="flex gap-x-4">
+                      {%- if block.settings.primary_button != blank -%}
+                        <a
+                          {% if block.settings.primary_button_link == blank %}
+                            role="link" aria-disabled="true"
+                          {% else %}
+                            href="{{ block.settings.primary_button_link }}"
+                          {% endif %}
+                          class="button{% if block.settings.primary_button_style %} button--secondary{% else %} button--primary{% endif %}"
+                          {{ block.shopify_attributes }}
+                        >
+                          {{ block.settings.primary_button | escape }}
+                        </a>
+                      {%- endif -%}
+                      {%- if block.settings.secondary_button != blank -%}
+                        <a
+                          {% if block.settings.secondary_button_link == blank %}
+                            role="link" aria-disabled="true"
+                          {% else %}
+                            href="{{ block.settings.secondary_button_link }}"
+                          {% endif %}
+                          class="button{% if block.settings.secondary_button_style %} button--secondary{% else %} button--primary{% endif %}"
+                          {{ block.shopify_attributes }}
+                        >
+                          {{ block.settings.secondary_button | escape }}
+                        </a>
+                      {%- endif -%}
+                    </div>
+                {%- endcase -%}
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+</div>
+
+{% schema %}
+{
+    "name": "Video section",
+    "tag": "section",
+    "class": "section",
+    "disabled_on": {
+    "groups": ["header", "footer"]
+    },
+    "settings": [
+    {
+        "type": "url",
+        "id": "video_url",
+        "label": "Enter video url"
+    },
+    {
+        "type": "header",
+        "content": "Select desktop video"
+    },
+    {
+        "type": "video",
+        "id": "desktop_video",
+        "label": "t:sections.video.settings.video.label",
+        "info": "Recommended 16:9 video"
+    },
+    {
+        "type": "header",
+        "content": "Mobile video"
+    },
+    {
+        "type": "video",
+        "id": "mobile_video",
+        "label": "Select mobile video",
+        "info": "Recommended 9:16 video. If not selected desktop video will be shown"
+    },
+    {
+        "type": "header",
+        "content": "Video controls"
+    },
+    {
+        "type": "checkbox",
+        "id": "autoplay",
+        "label": "Autoplay video",
+        "default": true
+    },
+    {
+        "type": "checkbox",
+        "id": "mute",
+        "label": "Mute video",
+        "default": true,
+        "info": "If autoplay is true, this option will be ignored"
+    },
+    {
+        "type": "checkbox",
+        "id": "enable_video_looping",
+        "label": "t:sections.video.settings.enable_video_looping.label",
+        "default": false
+    },
+    {
+        "type": "checkbox",
+        "id": "controls",
+        "label": "Show controls",
+        "default": false
+    },
+    {
+        "type": "checkbox",
+        "id": "full_width",
+        "label": "t:sections.video.settings.full_width.label",
+        "default": false
+    },
+    {
+        "type": "header",
+        "content": "Video size"
+    },
+    {
+        "type": "select",
+        "id": "desktop_size",
+        "label": "Select desktop video aspect ratio",
+        "options": [
+        {
+            "value": "16/9",
+            "label": "16:9"
+        },
+        {
+            "value": "9/16",
+            "label": "9:16"
+        },
+        {
+            "value": "3/4",
+            "label": "3:4"
+        },
+        {
+            "value": "4/3",
+            "label": "4:3"
+        }
+        ],
+        "default": "16/9"
+    },
+    {
+        "type": "select",
+        "id": "mobile_size",
+        "label": "Select mobile video aspect ratio",
+        "options": [
+        {
+            "value": "16/9",
+            "label": "16:9"
+        },
+        {
+            "value": "9/16",
+            "label": "9:16"
+        },
+        {
+            "value": "3/4",
+            "label": "3:4"
+        },
+        {
+            "value": "4/3",
+            "label": "4:3"
+        }
+        ],
+        "default": "9/16"
+    },
+    {
+        "type": "select",
+        "id": "content_position",
+        "label": "Select desktop content position",
+        "options": [
+        {
+            "value": "items-start",
+            "label": "Top left"
+        },
+        {
+            "value": "items-center",
+            "label": "Top center"
+        },
+        {
+            "value": "items-end",
+            "label": "Top right"
+        },
+        {
+            "value": "items-start justify-center",
+            "label": "Middle left"
+        },
+        {
+            "value": "items-center justify-center",
+            "label": "Middle center"
+        },
+        {
+            "value": "items-end justify-center",
+            "label": "Middle right"
+        },
+        {
+            "value": "items-start justify-end",
+            "label": "Bottom left"
+        },
+        {
+            "value": "items-center justify-end",
+            "label": "Bottom center"
+        },
+        {
+            "value": "items-end justify-end",
+            "label": "Bottom right"
+        }
+        ],
+        "default": "items-center justify-center"
+    },
+    {
+        "type": "header",
+        "content": "Select text alignment"
+    },
+    {
+        "type": "select",
+        "id": "text_position",
+        "label": "Select text position",
+        "options": [
+        {
+            "value": "start",
+            "label": "Left"
+        },
+        {
+            "value": "center",
+            "label": "Center"
+        },
+        {
+            "value": "end",
+            "label": "Right"
+        }
+        ],
+        "default": "center"
+    },
+    {
+        "type": "color_scheme",
+        "id": "color_scheme",
+        "label": "t:sections.all.colors.label",
+        "default": "background-1"
+    },
+    {
+        "type": "header",
+        "content": "t:sections.all.padding.section_padding_heading"
+    },
+    {
+        "type": "range",
+        "id": "padding_top",
+        "min": 1,
+        "max": 100,
+        "step": 1,
+        "unit": "px",
+        "label": "t:sections.all.padding.padding_top",
+        "default": 36
+    },
+    {
+        "type": "range",
+        "id": "padding_bottom",
+        "min": 1,
+        "max": 100,
+        "step": 1,
+        "unit": "px",
+        "label": "t:sections.all.padding.padding_bottom",
+        "default": 36
+    }
+    ],
+    "blocks": [
+    {
+        "type": "heading",
+        "name": "Heading",
+        "limit": 1,
+        "settings": [
+        {
+            "type": "inline_richtext",
+            "id": "heading",
+            "default": "Sample heading",
+            "label": "t:sections.image-with-text.blocks.heading.settings.heading.label"
+        },
+        {
+            "type": "select",
+            "id": "heading_size",
+            "label": "Select heading size",
+            "options": [
+            {
+                "value": "text-6xl",
+                "label": "Large"
+            },
+            {
+                "value": "text-5xl",
+                "label": "Medium"
+            },
+            {
+                "value": "text-4xl",
+                "label": "Small"
+            }
+            ],
+            "default": "text-5xl"
+        }
+        ]
+    },
+    {
+        "type": "caption",
+        "name": "Caption",
+        "limit": 1,
+        "settings": [
+        {
+            "type": "text",
+            "id": "caption",
+            "default": "Add a tagline",
+            "label": "Enter caption text"
+        },
+        {
+            "type": "select",
+            "id": "caption_size",
+            "options": [
+            {
+                "value": "text-3xl",
+                "label": "Large"
+            },
+            {
+                "value": "text-2xl",
+                "label": "Medium"
+            },
+            {
+                "value": "text-1xl",
+                "label": "Small"
+            }
+            ],
+            "default": "text-2xl",
+            "label": "Select caption size"
+        }
+        ]
+    },
+    {
+        "type": "text",
+        "name": "Text",
+        "limit": 1,
+        "settings": [
+        {
+            "type": "richtext",
+            "id": "text",
+            "default": "<p>Pair text with an image to focus on your chosen product, collection, or blog post. Add details on availability, style, or even provide a review.</p>",
+            "label": "t:sections.image-with-text.blocks.text.settings.text.label"
+        },
+        {
+            "type": "select",
+            "id": "text_size",
+            "options": [
+            {
+                "value": "text-4xl",
+                "label": "Large"
+            },
+            {
+                "value": "text-3xl",
+                "label": "Medium"
+            },
+            {
+                "value": "text-2xl",
+                "label": "Small"
+            }
+            ],
+            "default": "text-3xl",
+            "label": "Select text size"
+        }
+        ]
+    },
+    {
+        "type": "button",
+        "name": "Button",
+        "limit": 1,
+        "settings": [
+        {
+            "type": "text",
+            "id": "primary_button",
+            "default": "Button label",
+            "label": "Enter primary button label",
+            "info": "Button label"
+        },
+        {
+            "type": "url",
+            "id": "primary_button_link",
+            "label": "Enter primary button link"
+        },
+        {
+            "type": "checkbox",
+            "id": "primary_button_style",
+            "default": false,
+            "label": "t:sections.image-with-text.blocks.button.settings.outline_button.label"
+        },
+        {
+            "type": "text",
+            "id": "secondary_button",
+            "label": "Enter secondary button text"
+        },
+        {
+            "type": "url",
+            "id": "secondary_button_link",
+            "label": "Enter secondary button url"
+        },
+        {
+            "type": "checkbox",
+            "id": "secondary_button_style",
+            "label": "Use secondary button as outline",
+            "default": false
+        }
+        ]
+    }
+    ],
+    "presets": [
+    {
+        "name": "Video section"
+    }
+    ]
+}
+{% endschema %}
